@@ -121,6 +121,9 @@
     <string name="usb_use_MIDI">MIDI</string>
     <string name="usb_use">Use USB for</string>
 
+    <!-- Navbar -->
+    <string name="systemui_tuner_navbar_title">Layout</string>
+
     <!-- 4G icon -->
     <string name="show_fourg_icon_title">4G icon</string>
     <string name="show_fourg_icon_summary">Show 4G instead of LTE icon in statusbar</string>
