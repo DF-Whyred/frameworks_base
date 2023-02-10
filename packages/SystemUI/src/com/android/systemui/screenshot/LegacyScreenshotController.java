@@ -103,7 +103,6 @@ import javax.inject.Provider;
 public class LegacyScreenshotController implements InteractiveScreenshotHandler {
     private static final String TAG = logTag(LegacyScreenshotController.class);
 
-    static final String SCREENSHOT_URI_ID = "android:screenshot_uri_id";
 
     // From WizardManagerHelper.java
     private static final String SETTINGS_SECURE_USER_SETUP_COMPLETE = "user_setup_complete";
@@ -734,6 +733,12 @@ public class LegacyScreenshotController implements InteractiveScreenshotHandler 
                 ImageExporter.Result result = future.get();
                 Log.d(TAG, "Saved screenshot: " + result);
                 logScreenshotResultStatus(result.uri, screenshot.getUserHandle());
+                if (result.uri != null) {
+                    mActionsController.setCompletedScreenshot(requestId, new ScreenshotSavedResult(
+                            result.uri, screenshot.getUserOrDefault(), result.timestamp));
+                    mNotificationsController.showPostActionNotification(
+                            result.uri, mScreenBitmap);
+                }
                 onResult.accept(result);
                 if (DEBUG_CALLBACK) {
                     Log.d(TAG, "finished background processing, Calling (Consumer<Uri>) "
