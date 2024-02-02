@@ -147,4 +147,8 @@
 
     <!-- Toast for timer chips long press -->
     <string name="chip_longpress_hint">Lange drücken zum Stoppen</string>
+
+    <!-- Island notification -->
+    <string name="now_playing_on">Läuft gerade auf %1$s</string>
+    <string name="by_artist">%1$s von %2$s</string>
 </resources>
