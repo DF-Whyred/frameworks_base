@@ -6643,6 +6643,37 @@ public final class Settings {
         public static final String ISLAND_NOTIFICATION_NOW_PLAYING = "island_notification_now_playing";
 
         /**
+         * Provider for lockscreen weather
+         * Currently supported values:
+         * {@link #LOCKSCREEN_WEATHER_PROVIDER_NONE}
+         * {@link #LOCKSCREEN_WEATHER_PROVIDER_DEFAULT}
+         * {@link #LOCKSCREEN_WEATHER_PROVIDER_OMNI}
+         * @hide
+         */
+        public static final String LOCKSCREEN_WEATHER_PROVIDER = "lockscreen_weather_provider";
+
+        /**
+         * Value for {@link #LOCKSCREEN_WEATHER_PROVIDER}
+         * none - hide weather
+         * @hide
+         */
+        public static final int LOCKSCREEN_WEATHER_PROVIDER_NONE = 0;
+
+        /**
+         * Value for {@link #LOCKSCREEN_WEATHER_PROVIDER}
+         * default - aka smartspace / at a glance
+         * @hide
+         */
+        public static final int LOCKSCREEN_WEATHER_PROVIDER_DEFAULT = 1;
+
+        /**
+         * Value for {@link #LOCKSCREEN_WEATHER_PROVIDER}
+         * OmniJaws
+         * @hide
+         */
+        public static final int LOCKSCREEN_WEATHER_PROVIDER_OMNI = 2;
+
+        /**
          * IMPORTANT: If you add a new public settings you also have to add it to
          * PUBLIC_SETTINGS below. If the new setting is hidden you have to add
          * it to PRIVATE_SETTINGS below. Also add a validator that can validate
