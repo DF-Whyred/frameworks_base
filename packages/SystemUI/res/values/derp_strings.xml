@@ -151,6 +151,8 @@
     <string name="navbar_editor_summary">Configure navigaton bar</string>
     <!-- SysUI Tuner: Adjust button width dialog title [CHAR LIMIT=60] -->
     <string name="adjust_button_width">Adjust button width</string>
+    <string name="navbar_force_menu_key_title">Force menu key</string>
+    <string name="navbar_force_menu_key_summary">Always show the menu key regardless of the context</string>
 
     <!-- 4G icon -->
     <string name="show_fourg_icon_title">4G icon</string>
