@@ -29,10 +29,12 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.hardware.input.InputManager;
 import android.hardware.input.InputManagerGlobal;
 import android.media.AudioManager;
 import android.metrics.LogMaker;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.AttributeSet;
@@ -64,7 +66,7 @@ import com.android.systemui.res.R;
 import com.android.systemui.shared.navigationbar.KeyButtonRipple;
 import com.android.systemui.shared.system.QuickStepContract;
 
-public class KeyButtonView extends ImageView implements ButtonInterface, DragDropSurfaceCallback {
+public class KeyButtonView extends ImageView implements ButtonInterface {
     private static final String TAG = KeyButtonView.class.getSimpleName();
     private static final int CURSOR_REPEAT_FLAGS = KeyEvent.FLAG_SOFT_KEYBOARD
             | KeyEvent.FLAG_KEEP_TOUCH_MODE;
@@ -89,7 +91,6 @@ public class KeyButtonView extends ImageView implements ButtonInterface, DragDro
     private float mDarkIntensity;
     private boolean mHasOvalBg = false;
     private NavBarButtonClickLogger mNavBarButtonClickLogger;
-    private DragDropSurfaceCallback mCallback;
 
     @VisibleForTesting
     public enum NavBarButtonEvent implements UiEventLogger.UiEventEnum {
@@ -212,6 +213,20 @@ public class KeyButtonView extends ImageView implements ButtonInterface, DragDro
 
     public void setNavBarButtonClickLogger(NavBarButtonClickLogger navBarButtonClickLogger) {
         mNavBarButtonClickLogger = navBarButtonClickLogger;
+    }
+
+    public void loadAsync(Icon icon) {
+        new AsyncTask<Icon, Void, Drawable>() {
+            @Override
+            protected Drawable doInBackground(Icon... params) {
+                return params[0].loadDrawable(mContext);
+            }
+
+            @Override
+            protected void onPostExecute(Drawable drawable) {
+                setImageDrawable(drawable);
+            }
+        }.execute(icon);
     }
 
     @Override
@@ -377,7 +392,8 @@ public class KeyButtonView extends ImageView implements ButtonInterface, DragDro
         if (mHasOvalBg) {
             mOvalBgPaint.setColor(keyButtonDrawable.getDrawableBackgroundColor());
         }
-        mRipple.setType(mHasOvalBg ? KeyButtonRipple.Type.OVAL : KeyButtonRipple.Type.ROUNDED_RECT);
+        mRipple.setType(keyButtonDrawable.hasOvalBg() ? KeyButtonRipple.Type.OVAL
+                : KeyButtonRipple.Type.ROUNDED_RECT);
     }
 
     public void playSoundEffect(int soundConstant) {
@@ -521,19 +537,5 @@ public class KeyButtonView extends ImageView implements ButtonInterface, DragDro
     @Override
     public void setVertical(boolean vertical) {
         mIsVertical = vertical;
-    }
-
-    @Override
-    public void setForceDisableOverview(boolean forceDisableOverview) {
-        if (mCallback == null) {
-            Log.e("KeyButtonView", "mCallback == null");
-            return;
-        }
-        mCallback.setForceDisableOverview(forceDisableOverview);
-    }
-
-    @Override
-    public void setForceDisableOverviewCallback(DragDropSurfaceCallback forceDisableOverviewCallback) {
-        mCallback = forceDisableOverviewCallback;
     }
 }

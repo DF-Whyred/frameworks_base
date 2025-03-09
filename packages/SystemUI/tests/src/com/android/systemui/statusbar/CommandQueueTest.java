@@ -155,11 +155,11 @@ public class CommandQueueTest extends SysuiTestCase {
             LetterboxDetails[] letterboxDetails) {
         mCommandQueue.onSystemBarAttributesChanged(displayId, appearance, appearanceRegions,
                 navbarColorManagedByIme, behavior, requestedVisibleTypes, packageName,
-                letterboxDetails, false /* needsMenu */);
+                letterboxDetails);
         waitForIdleSync();
         verify(mCallbacks).onSystemBarAttributesChanged(eq(displayId), eq(appearance),
                 eq(appearanceRegions), eq(navbarColorManagedByIme), eq(behavior),
-                eq(requestedVisibleTypes), eq(packageName), eq(letterboxDetails), false /* needsMenu */);
+                eq(requestedVisibleTypes), eq(packageName), eq(letterboxDetails));
     }
 
     @Test

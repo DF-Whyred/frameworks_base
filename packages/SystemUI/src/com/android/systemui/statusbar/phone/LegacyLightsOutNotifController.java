@@ -151,7 +151,7 @@ public class LegacyLightsOutNotifController extends ViewController<View> {
         public void onSystemBarAttributesChanged(int displayId, @Appearance int appearance,
                 AppearanceRegion[] appearanceRegions, boolean navbarColorManagedByIme,
                 @Behavior int behavior, @InsetsType int requestedVisibleTypes,
-                String packageName, LetterboxDetails[] letterboxDetails, boolean needsMenu) {
+                String packageName, LetterboxDetails[] letterboxDetails) {
             if (displayId != mDisplayId) {
                 return;
             }

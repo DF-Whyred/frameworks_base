@@ -41,6 +41,4 @@ public interface ButtonInterface {
      *                    should be the same as the amount of time to trigger a long-press)
      */
     default void animateLongPress(boolean isTouchDown, boolean shrink, long durationMs) {}
-
-    default void setForceDisableOverviewCallback(DragDropSurfaceCallback callback) {}
 }

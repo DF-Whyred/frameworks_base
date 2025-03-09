@@ -14,8 +14,6 @@
 
 package com.android.systemui.tuner;
 
-import static android.inputmethodservice.InputMethodService.canImeRenderGesturalNavButtons;
-import static android.view.WindowManagerPolicyConstants.NAV_BAR_MODE_GESTURAL;
 import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.KEY;
 import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.KEY_CODE_END;
 import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.KEY_CODE_START;
@@ -31,7 +29,6 @@ import static com.android.systemui.navigationbar.views.NavigationBarInflaterView
 
 import android.annotation.Nullable;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.Icon;
@@ -52,15 +49,12 @@ import androidx.preference.PreferenceFragment;
 import com.android.systemui.Dependency;
 import com.android.systemui.res.R;
 import com.android.systemui.tuner.TunerService.Tunable;
-import com.android.tools.r8.keepanno.annotations.KeepTarget;
-import com.android.tools.r8.keepanno.annotations.UsesReflection;
 
 import java.util.ArrayList;
 
 public class NavBarTuner extends PreferenceFragment {
 
     private static final String LAYOUT = "layout";
-    private static final String NAVBAR_EDITOR = "navbar_editor";
 
     private final ArrayList<Tunable> mTunables = new ArrayList<>();
     private Handler mHandler;
@@ -77,20 +71,10 @@ public class NavBarTuner extends PreferenceFragment {
         getActivity().getActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
-    // aapt doesn't generate keep rules for android:fragment references in <Preference> tags, so
-    // explicitly declare references per usage in `R.xml.nav_bar_tuner`. See b/120445169.
-    @UsesReflection(@KeepTarget(classConstant = NavBarEditor.class))
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         addPreferencesFromResource(R.xml.nav_bar_tuner);
-        ListPreference mLayoutPref = (ListPreference) findPreference(LAYOUT);
-        Preference mNavBarEditorPref = findPreference(NAVBAR_EDITOR);
-        if (isGestureNavigationEnabled(getContext())) {
-            mLayoutPref.setEnabled(false);
-            mNavBarEditorPref.setEnabled(!canImeRenderGesturalNavButtons());
-        } else {
-            bindLayout(mLayoutPref);
-        }
+        bindLayout((ListPreference) findPreference(LAYOUT));
     }
 
     @Override
@@ -120,10 +104,5 @@ public class NavBarTuner extends PreferenceFragment {
             Dependency.get(TunerService.class).setValue(NAV_BAR_VIEWS, val);
             return true;
         });
-    }
-
-    private boolean isGestureNavigationEnabled(Context context) {
-        return NAV_BAR_MODE_GESTURAL == context.getResources().getInteger(
-                com.android.internal.R.integer.config_navBarInteractionMode);
     }
 }

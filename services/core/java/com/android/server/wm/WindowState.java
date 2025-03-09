@@ -1424,11 +1424,6 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
     }
 
     @Override
-    public boolean getNeedsMenuLw(WindowManagerPolicy.WindowState bottom) {
-        return getDisplayContent().getNeedsMenu(this, bottom);
-    }
-
-    @Override
     public int getBaseType() {
         return getTopParentWindow().mAttrs.type;
     }

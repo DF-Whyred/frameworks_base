@@ -23,14 +23,6 @@ import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_H
 import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_OVERVIEW_DISABLED;
 import static com.android.systemui.shared.system.QuickStepContract.SYSUI_STATE_SEARCH_DISABLED;
 import static com.android.systemui.shared.system.QuickStepContract.isGesturalMode;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.CLIPBOARD;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.CONTEXTUAL;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.VOLUME_DOWN;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.VOLUME_UP;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.POWER;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.KEY;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.MENU_IME_ROTATE;
-import static com.android.systemui.navigationbar.views.NavigationBarInflaterView.RIGHT;
 
 import android.animation.LayoutTransition;
 import android.animation.LayoutTransition.TransitionListener;
@@ -84,11 +76,9 @@ import com.android.systemui.navigationbar.ScreenPinningNotify;
 import com.android.systemui.navigationbar.gestural.EdgeBackGestureHandler;
 import com.android.systemui.navigationbar.gestural.NavigationHandle;
 import com.android.systemui.navigationbar.views.buttons.ButtonDispatcher;
-import com.android.systemui.navigationbar.views.buttons.ClipboardButtonDispatcher;
 import com.android.systemui.navigationbar.views.buttons.ContextualButton;
 import com.android.systemui.navigationbar.views.buttons.ContextualButtonGroup;
 import com.android.systemui.navigationbar.views.buttons.DeadZone;
-import com.android.systemui.navigationbar.views.buttons.DragDropSurfaceCallback;
 import com.android.systemui.navigationbar.views.buttons.KeyButtonDrawable;
 import com.android.systemui.navigationbar.views.buttons.NearestTouchFrame;
 import com.android.systemui.recents.Recents;
@@ -118,7 +108,7 @@ import java.util.function.Consumer;
 
 /** */
 public class NavigationBarView extends FrameLayout
-        implements NavigationModeController.ModeChangedListener, DragDropSurfaceCallback {
+        implements NavigationModeController.ModeChangedListener {
     final static boolean DEBUG = false;
     final static String TAG = "NavBarView";
 
@@ -134,9 +124,6 @@ public class NavigationBarView extends FrameLayout
     /** Indicates that navigation bar is vertical. */
     private boolean mIsVertical;
     private int mCurrentRotation = -1;
-    private int mNavMultiplier = -1;
-    private int mSlimMultiplier = 1;
-    private int mFullMultiplier = 1;
 
     boolean mLongClickableAccessibilityButton;
     int mDisabledFlags = 0;
@@ -156,8 +143,6 @@ public class NavigationBarView extends FrameLayout
     private KeyButtonDrawable mPowerButton;
     private KeyButtonDrawable mVolumePlusButton;
     private KeyButtonDrawable mVolumeMinusButton;
-    private KeyButtonDrawable mClipboardEmptyButton;
-    private KeyButtonDrawable mClipboardFullButton;
 
     private EdgeBackGestureHandler mEdgeBackGestureHandler;
     private DisplayTracker mDisplayTracker;
@@ -170,7 +155,6 @@ public class NavigationBarView extends FrameLayout
     private final NavTransitionListener mTransitionListener = new NavTransitionListener();
 
     private OnVerticalChangedListener mOnVerticalChangedListener;
-    private UpdateBoundsCallback mBoundsChangeListener;
     private boolean mLayoutTransitionsEnabled = true;
     private boolean mWakeAndUnlocking;
     private boolean mUseCarModeUi = false;
@@ -178,8 +162,6 @@ public class NavigationBarView extends FrameLayout
     private boolean mDockedStackExists;
     private boolean mScreenOn = true;
     private boolean mIsUserEnabled = true;
-    private boolean mForceDisableOverview = false;
-    private DragDropSurfaceCallback mForceDisableOverviewCallback = null;
 
     private final SparseArray<ButtonDispatcher> mButtonDispatchers = new SparseArray<>();
     private final ContextualButtonGroup mContextualButtonGroup;
@@ -336,8 +318,6 @@ public class NavigationBarView extends FrameLayout
         final int switcherResId = Flags.imeSwitcherRevamp()
                 ? com.android.internal.R.drawable.ic_ime_switcher_new
                 : R.drawable.ic_ime_switcher_default;
-        final ContextualButton menuButton = new ContextualButton(R.id.menu,
-                mLightContext, R.drawable.ic_sysbar_menu);
         final ContextualButton imeSwitcherButton = new ContextualButton(R.id.ime_switcher,
                 mLightContext, switcherResId);
         final ContextualButton accessibilityButton =
@@ -347,7 +327,6 @@ public class NavigationBarView extends FrameLayout
                 mLightContext, R.drawable.ic_chevron_left);
         final ContextualButton cursorRightButton = new ContextualButton(R.id.dpad_right,
                 mLightContext, R.drawable.ic_chevron_right);
-        mContextualButtonGroup.addButton(menuButton);
         mContextualButtonGroup.addButton(imeSwitcherButton);
         mContextualButtonGroup.addButton(accessibilityButton);
         mFloatingRotationButton = new FloatingRotationButton(mContext,
@@ -378,7 +357,6 @@ public class NavigationBarView extends FrameLayout
         mButtonDispatchers.put(R.id.home, new ButtonDispatcher(R.id.home));
         mButtonDispatchers.put(R.id.home_handle, new ButtonDispatcher(R.id.home_handle));
         mButtonDispatchers.put(R.id.recent_apps, new ButtonDispatcher(R.id.recent_apps));
-        mButtonDispatchers.put(R.id.menu, menuButton);
         mButtonDispatchers.put(R.id.ime_switcher, imeSwitcherButton);
         mButtonDispatchers.put(R.id.accessibility_button, accessibilityButton);
         mButtonDispatchers.put(R.id.menu_container, mContextualButtonGroup);
@@ -387,11 +365,6 @@ public class NavigationBarView extends FrameLayout
         mButtonDispatchers.put(R.id.power, new ButtonDispatcher(R.id.power));
         mButtonDispatchers.put(R.id.volume_minus, new ButtonDispatcher(R.id.volume_minus));
         mButtonDispatchers.put(R.id.volume_plus, new ButtonDispatcher(R.id.volume_plus));
-        mButtonDispatchers.put(R.id.clipboard, new ClipboardButtonDispatcher());
-        mButtonDispatchers.put(R.id.custom_key, new ButtonDispatcher(R.id.custom_key));
-        for (int i = 0; i < mButtonDispatchers.size(); i++) {
-            mButtonDispatchers.valueAt(i).setForceDisableOverviewCallback(this);
-        }
         mDeadZone = new DeadZone(this);
 
         mShowCursorKeysObserver = new ContentObserver(null) {
@@ -410,14 +383,6 @@ public class NavigationBarView extends FrameLayout
 
     public void setEdgeBackGestureHandler(EdgeBackGestureHandler edgeBackGestureHandler) {
         mEdgeBackGestureHandler = edgeBackGestureHandler;
-    }
-
-    public void setBoundsChangeListener(UpdateBoundsCallback callback) {
-        mBoundsChangeListener = callback;
-    }
-
-    private void triggerBoundsChange() {
-        mBoundsChangeListener.onBoundsChange();
     }
 
     void setBarTransitions(NavigationBarTransitions navigationBarTransitions) {
@@ -459,18 +424,6 @@ public class NavigationBarView extends FrameLayout
 
     public void setTouchHandler(Gefingerpoken touchHandler) {
         mTouchHandler = touchHandler;
-    }
-
-    @Override
-    public void setForceDisableOverview(boolean forceDisableOverview) {
-        mForceDisableOverview = forceDisableOverview;
-        if (mForceDisableOverviewCallback != null) {
-            mForceDisableOverviewCallback.setForceDisableOverview(forceDisableOverview);
-        }
-    }
-
-    public void setForceDisableOverviewCallback(DragDropSurfaceCallback forceDisableOverviewCallback) {
-        mForceDisableOverviewCallback = forceDisableOverviewCallback;
     }
 
     @Override
@@ -516,10 +469,6 @@ public class NavigationBarView extends FrameLayout
         return mButtonDispatchers.get(R.id.recent_apps);
     }
 
-    public ButtonDispatcher getMenuButton() {
-        return mButtonDispatchers.get(R.id.menu);
-    }
-
     public ButtonDispatcher getBackButton() {
         return mButtonDispatchers.get(R.id.back);
     }
@@ -558,14 +507,6 @@ public class NavigationBarView extends FrameLayout
 
     public ButtonDispatcher getVolumeMinusButton() {
         return mButtonDispatchers.get(R.id.volume_minus);
-    }
-
-    public ClipboardButtonDispatcher getClipboardButton() {
-        return (ClipboardButtonDispatcher) mButtonDispatchers.get(R.id.clipboard);
-    }
-
-    public ButtonDispatcher getCustomButton() {
-        return mButtonDispatchers.get(R.id.custom_key);
     }
 
     public SparseArray<ButtonDispatcher> getButtonDispatchers() {
@@ -609,8 +550,6 @@ public class NavigationBarView extends FrameLayout
         mPowerButton = getDrawable(R.drawable.ic_sysbar_power);
         mVolumePlusButton = getDrawable(R.drawable.ic_sysbar_volume_plus);
         mVolumeMinusButton = getDrawable(R.drawable.ic_sysbar_volume_minus);
-        mClipboardEmptyButton = getDrawable(R.drawable.clipboard_empty);
-        mClipboardFullButton = getDrawable(R.drawable.clipboard_full);
     }
 
     /**
@@ -746,7 +685,7 @@ public class NavigationBarView extends FrameLayout
         updateRecentsIcon();
 
         boolean disableCursorKeys = !mShowCursorKeys || !useAltBack ||
-                (QuickStepContract.isGesturalMode(mNavBarMode) && canImeRenderGesturalNavButtons() && mImeVisible);
+                (QuickStepContract.isGesturalMode(mNavBarMode) && mImeVisible);
 
         // Update IME button visibility, a11y and rotate button always overrides the appearance
         boolean disableImeSwitcher =
@@ -764,9 +703,6 @@ public class NavigationBarView extends FrameLayout
         if (getVolumePlusButton() != null) {
             getVolumePlusButton().setImageDrawable(mVolumePlusButton);
         }
-        if (getClipboardButton() != null) {
-            getClipboardButton().setImageDrawables(mClipboardEmptyButton, mClipboardFullButton);
-        }
 
         mBarTransitions.reapplyDarkIntensity();
 
@@ -776,7 +712,7 @@ public class NavigationBarView extends FrameLayout
         // Always disable recents when alternate car mode UI is active and for secondary displays.
         boolean disableRecent = isRecentsButtonDisabled();
 
-        // Disable the home handle if both home and recents are disabled
+        // Disable the home handle if both hone and recents are disabled
         boolean disableHomeHandle = disableRecent
                 && ((mDisabledFlags & View.STATUS_BAR_DISABLE_HOME) != 0);
 
@@ -813,6 +749,16 @@ public class NavigationBarView extends FrameLayout
         getHomeHandle().setVisibility(disableHomeHandle || mHomeHandleForceHidden ? View.INVISIBLE : View.VISIBLE);
         getCursorLeftButton().setVisibility(disableCursorKeys  ? View.INVISIBLE : View.VISIBLE);
         getCursorRightButton().setVisibility(disableCursorKeys ? View.INVISIBLE : View.VISIBLE);
+
+        if (getPowerButton() != null) {
+            getPowerButton().setVisibility(View.VISIBLE);
+        }
+        if (getVolumeMinusButton() != null) {
+            getVolumeMinusButton().setVisibility(View.VISIBLE);
+        }
+        if (getVolumePlusButton() != null) {
+            getVolumePlusButton().setVisibility(View.VISIBLE);
+        }
 
         notifyActiveTouchRegions();
     }
@@ -1002,9 +948,6 @@ public class NavigationBarView extends FrameLayout
         mEdgeBackGestureHandler.onNavigationModeChanged(mNavBarMode);
         mRotationButtonController.onNavigationModeChanged(mNavBarMode);
         updateRotationButton();
-        mSlimMultiplier = 1;
-        mFullMultiplier = mode == NAV_BAR_MODE_GESTURAL ? 2 : 1;
-        updateBoundsConfig();
     }
 
     @Override
@@ -1014,11 +957,6 @@ public class NavigationBarView extends FrameLayout
 
     @Override
     public void onNavigationModeChanged(int mode) { /* Do nothing */ }
-
-    public void setMenuVisibility(final boolean show) {
-        mContextualButtonGroup.setButtonVisibility(R.id.menu, show);
-        updateBoundsConfig();
-    }
 
     public void setAccessibilityButtonState(final boolean visible, final boolean longClickable) {
         mLongClickableAccessibilityButton = longClickable;
@@ -1047,8 +985,6 @@ public class NavigationBarView extends FrameLayout
     public void onFinishInflate() {
         super.onFinishInflate();
         mNavigationInflaterView = findViewById(R.id.navigation_inflater);
-        mNavigationInflaterView.setIconColors(mLightIconColor, mDarkIconColor);
-        mNavigationInflaterView.setBoundsChangeListener(this::updateBoundsConfig);
         mNavigationInflaterView.setButtonDispatchers(mButtonDispatchers);
 
         mNavigationBarContents = (ViewGroup) findViewById(R.id.nav_buttons);
@@ -1196,7 +1132,14 @@ public class NavigationBarView extends FrameLayout
 
         if (isGesturalMode(mNavBarMode)) {
             // Update the nav bar background to match the height of the visible nav bar
-            mBarTransitions.setBackgroundFrame(new Rect(0, getNavBarFrameHeight() - getNavBarHeight(), w, h));
+            int height = mIsVertical
+                    ? getResources().getDimensionPixelSize(
+                            com.android.internal.R.dimen.navigation_bar_height_landscape)
+                    : getResources().getDimensionPixelSize(
+                            com.android.internal.R.dimen.navigation_bar_height);
+            int frameHeight = getResources().getDimensionPixelSize(
+                    com.android.internal.R.dimen.navigation_bar_frame_height);
+            mBarTransitions.setBackgroundFrame(new Rect(0, frameHeight - height, w, h));
         } else {
             mBarTransitions.setBackgroundFrame(null);
         }
@@ -1204,52 +1147,12 @@ public class NavigationBarView extends FrameLayout
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     }
 
-    void updateBoundsConfig() {
-        if (mNavMultiplier == -1) return;
-        boolean willBeSlim = true;
-        if (mNavBarMode != NAV_BAR_MODE_GESTURAL) {
-            // Only gestural nav supports slim bar
-            willBeSlim = false;
-        }
-        if (mNavigationInflaterView.hasKey(CLIPBOARD)
-                    || mNavigationInflaterView.hasKey(KEY)
-                    || mNavigationInflaterView.hasKey(POWER)
-                    || mNavigationInflaterView.hasKey(VOLUME_UP)
-                    || mNavigationInflaterView.hasKey(VOLUME_DOWN)) {
-            // If full-size buttons are present, don't cut them off
-            willBeSlim = false;
-        }
-        if (willBeSlim && getMenuButton().isVisible()) {
-            // If menu button is visible (and exists on navbar!), don't cut it off
-            willBeSlim = !(mNavigationInflaterView.hasKey(MENU_IME_ROTATE)
-                    || mNavigationInflaterView.hasKey(CONTEXTUAL)
-                    || mNavigationInflaterView.hasKey(RIGHT));
-        }
-        final int newMultiplier = willBeSlim ? mSlimMultiplier : mFullMultiplier;
-        if (mNavMultiplier != newMultiplier) {
-            mNavMultiplier = newMultiplier;
-            triggerBoundsChange();
-        }
-    }
-
     int getNavBarHeight() {
-        return (mIsVertical
+        return mIsVertical
                 ? getResources().getDimensionPixelSize(
                 com.android.internal.R.dimen.navigation_bar_height_landscape)
                 : getResources().getDimensionPixelSize(
-                        com.android.internal.R.dimen.navigation_bar_height))
-                        * (mNavMultiplier == -1 ? 1 : mNavMultiplier);
-    }
-
-    int getNavBarWidth() {
-        return getResources().getDimensionPixelSize(
-                        com.android.internal.R.dimen.navigation_bar_width)
-                        * (mNavMultiplier == -1 ? 1 : mNavMultiplier);
-    }
-
-    int getNavBarFrameHeight() {
-        return getResources().getDimensionPixelSize(
-                        com.android.internal.R.dimen.navigation_bar_frame_height);
+                        com.android.internal.R.dimen.navigation_bar_height);
     }
 
     private void notifyVerticalChangedListener(boolean newVertical) {
@@ -1338,8 +1241,6 @@ public class NavigationBarView extends FrameLayout
         }
 
         updateNavButtonIcons();
-        mNavMultiplier = 0;
-        updateBoundsConfig();
 
         mCustomSettingsObserver.observe();
         mCustomSettingsObserver.update();
@@ -1381,10 +1282,9 @@ public class NavigationBarView extends FrameLayout
                         visibilityToString(getCurrentView().getVisibility()),
                         getCurrentView().getAlpha()));
 
-        pw.println(String.format("      disabled=0x%08x vertical=%s menu=%s darkIntensity=%.2f",
+        pw.println(String.format("      disabled=0x%08x vertical=%s darkIntensity=%.2f",
                         mDisabledFlags,
                         mIsVertical ? "true" : "false",
-                        getMenuButton().isVisible() ? "true" : "false",
                         getLightTransitionsController().getCurrentDarkIntensity()));
 
         pw.println("    mScreenOn: " + mScreenOn);
@@ -1394,7 +1294,6 @@ public class NavigationBarView extends FrameLayout
         dumpButton(pw, "home", getHomeButton());
         dumpButton(pw, "handle", getHomeHandle());
         dumpButton(pw, "rcnt", getRecentsButton());
-        dumpButton(pw, "menu", getMenuButton());
         dumpButton(pw, "a11y", getAccessibilityButton());
         dumpButton(pw, "ime", getImeSwitchButton());
         dumpButton(pw, "curl", getCursorLeftButton());
@@ -1468,10 +1367,6 @@ public class NavigationBarView extends FrameLayout
 
     interface UpdateActiveTouchRegionsCallback {
         void update();
-    }
-
-    interface UpdateBoundsCallback {
-        void onBoundsChange();
     }
 
     private CustomSettingsObserver mCustomSettingsObserver = new CustomSettingsObserver();
