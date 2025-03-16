@@ -276,13 +276,13 @@ public final class PixelPropsUtils {
         // Alter build parameters to avoid hardware attestation enforcement
         setPropValue("MANUFACTURER", "Google");
         setPropValue("MODEL", "Pixel 9");
-        setPropValue("FINGERPRINT", "google/tokay_beta/tokay:Baklava/BP22.250124.009/13034193:user/release-keys");
+        setPropValue("FINGERPRINT", "google/tokay_beta/tokay:Baklava/BP22.250124.010/13116449:user/release-keys");
         setPropValue("BRAND", "google");
         setPropValue("PRODUCT", "tokay_beta");
         setPropValue("DEVICE", "tokay");
         setPropValue("VERSION.RELEASE", "Baklava");
-        setPropValue("ID", "BP22.250124.009");
-        setPropValue("VERSION.INCREMENTAL", "13034193");
+        setPropValue("ID", "BP22.250124.010");
+        setPropValue("VERSION.INCREMENTAL", "13116449");
         setPropValue("TYPE", "user");
         setPropValue("TAGS", "release-keys");
         setPropValue("VERSION.SECURITY_PATCH", "2025-02-05");
